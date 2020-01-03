@@ -1,0 +1,3 @@
+<launch>
+	<node name="banana" pkg="banana" type="main.py" output="screen"/>
+</launch>

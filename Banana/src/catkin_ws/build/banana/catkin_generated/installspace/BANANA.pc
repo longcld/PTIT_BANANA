@@ -1,0 +1,8 @@
+prefix=/home/ligirk/catkin_ws/install
+
+Name: BANANA
+Description: Description of BANANA
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/ligirk/catkin_ws/install/lib 
+Requires: message_runtime
