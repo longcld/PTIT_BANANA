@@ -3,7 +3,7 @@
 ## Cách build
 
 ```
-cd Banana
+cd team805
 sudo docker build -t banana .
 ```
 
