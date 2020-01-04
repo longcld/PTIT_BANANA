@@ -48,9 +48,8 @@ import tensorflow as tf
 import math
 import keras
 import dlib
-import os
 
-models_path = '../../catkin_ws/src/catkin_ws/src/banana/models/'
+models_path = '../../catkin_ws/src/catkin_ws/src/team805/models/'
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -58,11 +57,16 @@ session = tf.Session(config=config)
 
 keras.backend.set_session(session)
 
-speed = rospy.Publisher('/banana/set_speed', Float32)
-angle = rospy.Publisher('/banana/set_angle', Float32)
+speed = rospy.Publisher('/team805/set_speed', Float32)
+angle = rospy.Publisher('/team805/set_angle', Float32)
 
+# Weights
 weightsPath = models_path + "MobileNetSSD_deploy.caffemodel"
+
+# Architecture of model
 proto = models_path + "MobileNetSSD_deploy.prototxt"
+
+# Load car detection model
 net = cv2.dnn.readNetFromCaffe(proto, weightsPath)
 
 lane = segment.load_model(models_path + "lane.h5")
@@ -78,7 +82,7 @@ counts = 15
 s = 0
 a = 0
 image_count = 0
-check = 0
+is_car = False
 tracker = dlib.correlation_tracker()
 
 CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
@@ -89,15 +93,25 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 
 def detect_car(image):
     (H, W) = (image.shape[0], image.shape[1])
+    # Convert image to blob types
     blob = cv2.dnn.blobFromImage(image, size=(W, H), ddepth=cv2.CV_8U)
+    # Push blob image to model
     net.setInput(blob, scalefactor=1.0 / 127.5, mean=[127.5, 127.5, 127.5])
+    # Run model
     detections = net.forward()
+    # Get 1st box from 100 detected box(3rd index)
     box = detections[0, 0, 0, 3:7] * np.array([W, H, W, H])
+    # 3:7 be a coordinate of box detected
     (startX, startY, endX, endY) = box.astype("int")
     rect = [startX, startY, endX, endY]
+
+    # Get label encode of output model
     idx = int(detections[0, 0, 0, 1])
+
+    # Check if detected box is car
     if CLASSES[idx] != "car":
         return [0, 0, 0, 0]
+
     return rect
 
 
@@ -149,7 +163,7 @@ def predict(img):
 
 
 def callback(ros_data):
-    global ready_turn, turn, turns, counts, s, a, image_count, tracker, check
+    global ready_turn, turn, turns, counts, s, a, image_count, tracker, is_car
 
     image_count += 1
 
@@ -206,68 +220,89 @@ def callback(ros_data):
             a = 60
 
     else:
+        # Set frequent detect car
         if image_count % 10 == 0:
             box = detect_car(image_np)
             if box != [0, 0, 0, 0]:
-                check = 1
+                # if detected box is car
+                is_car = True
+                # Convert car box to dlib type
                 rect_car = dlib.rectangle(box[0], box[1], box[2], box[3])
+                # Start track by this box for 10 next frames
                 tracker.start_track(image_np, rect_car)
+                # Set detected region not lane
                 y_pred[box[1]:box[3], box[0]:box[2]] = 0
+                # Draw bounding box
                 image_np = cv2.rectangle(image_np, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
         else:
-            if check == 1:
+            # Update tracking
+            if is_car == True:
+                # Set last frame to original
                 if image_count % 10 == 9:
-                    check = 0
+                    is_car = False
 
+                # Update tracking image
                 tracker.update(image_np)
+
+                # Get new positon of detected car
                 pos = tracker.get_position()
 
+                # Get coordinate
                 startX = int(pos.left())
                 startY = int(pos.top())
                 endX = int(pos.right())
-                endY = int(pos.bottom())
+                endY = int(pos.bottom() + 15)
 
+                # Set detected region not lane
                 y_pred[startY:endY, startX:endX] = 0
-                print(image_count)
+                # print(image_count)
+                # Draw
                 image_np = cv2.rectangle(image_np, (startX, startY), (endX, endY), (0, 255, 0), 2)
-        temp = np.where(y_pred == 1)
-        image_np[temp[0], temp[1]] = [0, 0, 80.5]
-        # x = temp[0].mean()
-        # y = temp[1].mean()
 
-        # x, y = get_center_lane_point(y_pred, 123)
-        x1, y1 = get_center_lane_point(y_pred, 133)
-        x2, y2 = get_center_lane_point(y_pred, 200)
-        # if a > 45 or a < -45:
-        # a = 0
-        #
-        x = np.mean([x1, x2])
-        y = np.mean([y1, y2])
-        # print(x, y)
-        # image_np = cv2.rectangle(image_np, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
+        # Control car
+
+        if (y_pred[140].sum() > 280):
+            print("______________________________________________________________________________")
+            x, y = (120, 160)
+        else:
+            temp = np.where(y_pred == 1)
+            image_np[temp[0], temp[1]] = [0, 0, 80.5]
+            # x = temp[0].mean()
+            # y = temp[1].mean()
+
+            # x, y = get_center_lane_point(y_pred, 155)
+            x1, y1 = get_center_lane_point(y_pred, 132)
+            x2, y2 = get_center_lane_point(y_pred, 190)
+
+            x = np.mean([x1, x2])
+            y = np.mean([y1, y2])
+            # print(x, y)
+            # image_np = cv2.rectangle(image_np, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
+
         cv2.line(image_np, (160, 240), (int(y), int(x)), [0, 255, 0], 2)
         print("straight")
         if (159 < y < 161):
             s = 50
-        elif (y < 140 or y > 200):
+        elif (y < 130 or y > 210):
             s = 10
         else:
             s = 50
 
+        # print(y_pred[0])
         a = getAngle(x, y)
 
         cv2.putText(image_np, str(s) + " km/h", (170, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255))
 
-    cv2.namedWindow('origin', cv2.WINDOW_NORMAL)
-    # cv2.namedWindow('box', cv2.WINDOW_NORMAL)
-    # cv2.namedWindow('segmented', cv2.WINDOW_NORMAL)
-    cv2.resizeWindow('origin', 640, 480)
-    # cv2.resizeWindow('box', 640, 480)
-    # cv2.resizeWindow('segmented', 640, 480)
-    cv2.imshow('origin', image_np)
-    # cv2.imshow('box', box_img)
-    # cv2.imshow('segmented', y_pred)
-    cv2.waitKey(1)
+    # cv2.namedWindow('origin', cv2.WINDOW_NORMAL)
+    # # cv2.namedWindow('box', cv2.WINDOW_NORMAL)
+    # # cv2.namedWindow('segmented', cv2.WINDOW_NORMAL)
+    # cv2.resizeWindow('origin', 640, 480)
+    # # cv2.resizeWindow('box', 640, 480)
+    # # cv2.resizeWindow('segmented', 640, 480)
+    # cv2.imshow('origin', image_np)
+    # # cv2.imshow('box', box_img)
+    # # cv2.imshow('segmented', y_pred)
+    # cv2.waitKey(1)
 
     speed.publish(s)
     angle.publish(round(a))
@@ -297,9 +332,9 @@ def listener():
     # run simultaneously.
     rospy.init_node('listener', anonymous=True)
     print('READY')
-    rospy.Subscriber('/banana/camera/rgb/compressed', CompressedImage, callback)
-    # rospy.Subscriber('/banana_image/compressed', CompressedImage, callback)
-    # rospy.Subscriber('banana/camera/depth/compressed', CompressedImage, depth_callback)
+    rospy.Subscriber('/team805/camera/rgb/compressed', CompressedImage, callback)
+    # rospy.Subscriber('/team805_image/compressed', CompressedImage, callback)
+    # rospy.Subscriber('team805/camera/depth/compressed', CompressedImage, depth_callback)
     cv2.destroyAllWindows()
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
