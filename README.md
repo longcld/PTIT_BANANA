@@ -16,6 +16,6 @@ sudo docker run --rm -d -it --privileged -e DISPLAY=$DISPLAY --gpus=all --networ
 
 # Chạy code điều khiển xe 
 ```
-roslaunch banana banana.launch
+roslaunch team805 team805.launch
 ```
 
