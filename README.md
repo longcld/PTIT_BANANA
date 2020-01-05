@@ -11,7 +11,7 @@ sudo docker build -t banana .
 
 
 ```
-sudo docker run --rm -d -it --privileged -e DISPLAY=$DISPLAY --gpus=all --network=host -v /home/long/DigitalRace2019/Banana/src:/catkin_ws/src --name banana banana bash
+sudo docker run --rm -d -it --privileged -e DISPLAY=$DISPLAY --gpus=all --network=host -v /home/long/DigitalRace2019/Banana/src:/catkin_ws/src --name team805 banana bash
 ```
 
 # Chạy code điều khiển xe 
