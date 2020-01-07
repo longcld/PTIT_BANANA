@@ -48,7 +48,8 @@ import tensorflow as tf
 import math
 import keras
 import dlib
-import timeit
+
+# __________________________________________________PATH______________________________________________________
 models_path = '../../catkin_ws/src/catkin_ws/src/team805/models/'
 
 config = tf.ConfigProto()
@@ -76,6 +77,7 @@ sign = load_model(models_path + "sign1.h5")
 lane._make_predict_function()
 sign._make_predict_function()
 
+# ______________________________________________________DEFAULT VALUE___________________________________________
 ready_turn = -1
 turn = 'none'
 turns = []
@@ -83,6 +85,7 @@ counts = 15
 end_track = 0
 s = 0
 a = 0
+total_time = 0
 image_count = 0
 is_car = False
 tracker = dlib.correlation_tracker()
@@ -93,6 +96,7 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
            "sofa", "train", "tvmonitor"]
 
 
+# ___________________________________________________________DETECT CAR_________________________________________
 def detect_car(image):
     (H, W) = (image.shape[0], image.shape[1])
     # Convert image to blob types
@@ -119,7 +123,6 @@ def detect_car(image):
 
 def classify(box):
     box = cv2.cvtColor(box, cv2.COLOR_BGR2GRAY)
-
 
     with session.as_default():
         with session.graph.as_default():
@@ -166,10 +169,11 @@ def predict(img):
 
 
 def callback(ros_data):
-    global ready_turn, turn, turns, counts, s, a, image_count, tracker, is_car, startX, startY, endX, endY, end_track
+    global ready_turn, turn, turns, counts, s, a, image_count, tracker, is_car, \
+        startX, startY, endX, endY, end_track, total_time
 
     image_count += 1
-
+    # ____________________________________________________________TURN___________________________________________________
     if counts == 0:
         counts = 5
         l = turns.count('left')
@@ -184,14 +188,12 @@ def callback(ros_data):
                 turn = 'right'
             else:
                 turn = 'none'
-        # print(turn)
         turns = []
-    x = 0
-    y = 0
 
     np_arr = np.fromstring(ros_data.data, np.uint8)
     image_np = cv2.imdecode(np_arr, 1)
 
+    # ____________________________________________________SIGN________________________________________________
     rects = detectSign.getRects(image_np)
 
     for rect in rects:
@@ -201,33 +203,27 @@ def callback(ros_data):
         roi = image_np[y:y + h + 7, x:x + w + 7]
 
         turn_pred = classify(roi)
-        # print(turn_pred)
 
         if (turn_pred == 'left') or (turn_pred == 'right'):
             turns.append(turn_pred)
             cv2.rectangle(image_np, (x, y), (x + w, y + h), [0, 255, 0], 1)
             cv2.putText(image_np, turn_pred, (x, y + h + 8), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255))
 
-
-
     with session.as_default():
         with session.graph.as_default():
-            start = timeit.default_timer()
             y_pred = np.squeeze(lane.predict(image_np.reshape(1, 240, 320, 3).astype('float32')))
-            stop = timeit.default_timer()
-            print('Time: ', stop - start)
 
+    # _____________________________________________________READY TURN______________________________________________
     if 0 < ready_turn < 19:
         if turn == 'left':
-            # print("turn left")
             s = 0
             a = -60
         elif turn == 'right':
-            # print('turn right')
             s = 0
             a = 60
 
     else:
+        # __________________________________________________DETECT CAR_____________________________________________
         # Set frequent detect car
         if image_count % 3 == 0:
             startX1, startY1, endX1, endY1 = detect_car(image_np)
@@ -266,49 +262,29 @@ def callback(ros_data):
                 # startY = int(pos.top() - 10)
                 endX = int(pos.right() + 10)
                 endY = int(pos.bottom() + 20)
-
-                # if endY > 240:
-                #     endY = 240
-                #
-                # # Set detected region not lane
-                # y_pred[startY:endY, startX:endX] = 0
-                # # print(image_count)
-                # # Draw
-                # image_np = cv2.rectangle(image_np, (startX, startY), (endX, endY), (0, 255, 0), 2)
-
+        # _________________________________________________________TRACKING CAR_________________________________________
         if not is_car and (image_count - end_track == 7) and endY != 0:
-            # image_count = 0
-            # print("pass")
             startX, startY, endX, endY = [0, 0, 0, 0]
         if endY > 240:
-            # print(startX, endX)
             startY = 0
             endY = 240
         if startX < 0:
             startX = 0
-            # print(startX, endX)
         if endX > 320:
             endX = 320
-            # print(startX, endX)
 
-        # print(endY)
-        # print(image_count)
         # Draw
         image_np = cv2.rectangle(image_np, (startX, startY), (endX, endY), (0, 255, 0), 2)
+
         # Set detected region not lane
-        # print(image_count)
         y_pred[startY:endY, startX:endX] = 0
 
-        # Control car
-
+        # _____________________________________________________SPEED & ANGLE__________________________________________
         if (y_pred[140].sum() > 280):
-            # print("______________________________________________________________________________")
             x, y = (120, 160)
         else:
             temp = np.where(y_pred == 1)
             image_np[temp[0], temp[1]] = [0, 0, 80.5]
-            # x = temp[0].mean()
-            # y = temp[1].mean()
 
             # x, y = get_center_lane_point(y_pred, 152)
             x1, y1 = get_center_lane_point(y_pred, 120)
@@ -316,35 +292,34 @@ def callback(ros_data):
             #
             x = np.mean([x1, x2])
             y = np.mean([y1, y2])
-            # print(x, y)
-            # image_np = cv2.rectangle(image_np, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
 
         cv2.line(image_np, (160, 240), (int(y), int(x)), [0, 255, 0], 2)
-        # print("straight")
+
         if (159 < y < 161):
             s = 120
         elif (y < 140 or y > 180):
             s = 10
         else:
             s = 60
-        # print(y_pred[0])
+        # ________________________________________________________SLOW___________________________________________
         if len(turns) > 0 and turns[-1] != 'none':
-            print("slow")
             s = 0
         a = getAngle(x, y)
 
         cv2.putText(image_np, str(s) + " km/h", (170, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255))
 
-    cv2.namedWindow('origin', cv2.WINDOW_NORMAL)
+    # if image_count % 10 == 0:
+    #     print("FPS: ", image_count / total_time)
+    # cv2.namedWindow('origin', cv2.WINDOW_NORMAL)
     # cv2.namedWindow('box', cv2.WINDOW_NORMAL)
     # cv2.namedWindow('segmented', cv2.WINDOW_NORMAL)
-    cv2.resizeWindow('origin', 640, 480)
+    # cv2.resizeWindow('origin', 640, 480)
     # cv2.resizeWindow('box', 640, 480)
     # cv2.resizeWindow('segmented', 640, 480)
-    cv2.imshow('origin', image_np)
+    # cv2.imshow('origin', image_np)
     # cv2.imshow('box', box_img)
     # cv2.imshow('segmented', y_pred)
-    cv2.waitKey(1)
+    # cv2.waitKey(1)
 
     speed.publish(s)
     angle.publish(round(a))
