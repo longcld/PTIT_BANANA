@@ -49,7 +49,7 @@ import math
 import keras
 import dlib
 import timeit
-models_path = '../catkin_ws/src/team805/models/'
+models_path = '../../catkin_ws/src/catkin_ws/src/team805/models/'
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
