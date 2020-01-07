@@ -237,9 +237,9 @@ def callback(ros_data):
                 # Start track by this box for 10 next frames
                 tracker.start_track(image_np, rect_car)
 
-                startX -= 10
+                startX -= 15
                 startY = 0
-                endX += 10
+                endX += 15
                 endY += 20
 
         else:
@@ -257,10 +257,10 @@ def callback(ros_data):
                 pos = tracker.get_position()
 
                 # Get coordinate
-                startX = int(pos.left() - 10)
+                startX = int(pos.left() - 15)
                 startY = 0
                 # startY = int(pos.top() - 10)
-                endX = int(pos.right() + 10)
+                endX = int(pos.right() + 15)
                 endY = int(pos.bottom() + 20)
         # _________________________________________________________TRACKING CAR_________________________________________
         if not is_car and (image_count - end_track == 7) and endY != 0:

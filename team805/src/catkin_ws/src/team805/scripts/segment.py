@@ -1,12 +1,7 @@
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Conv2D, Concatenate, MaxPool2D, PReLU, Lambda, DepthwiseConv2D, Add, Input, \
     UpSampling2D, Conv2DTranspose
-from tensorflow.keras.callbacks import LearningRateScheduler
 import tensorflow as tf
-import os
-import cv2
-import numpy as np
-
 
 def Downsampling1(inp):
     conv = Conv2D(filters=32,
