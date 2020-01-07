@@ -48,8 +48,8 @@ import tensorflow as tf
 import math
 import keras
 import dlib
-
-models_path = '../../catkin_ws/src/catkin_ws/src/team805/models/'
+import timeit
+models_path = '../catkin_ws/src/team805/models/'
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -71,6 +71,7 @@ net = cv2.dnn.readNetFromCaffe(proto, weightsPath)
 
 lane = segment.load_model(models_path + "lane.h5")
 sign = load_model(models_path + "sign1.h5")
+# print(lane.summary())
 
 lane._make_predict_function()
 sign._make_predict_function()
@@ -79,12 +80,13 @@ ready_turn = -1
 turn = 'none'
 turns = []
 counts = 15
+end_track = 0
 s = 0
 a = 0
 image_count = 0
 is_car = False
 tracker = dlib.correlation_tracker()
-
+startX, startY, endX, endY = [0, 0, 0, 0]
 CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
            "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
            "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
@@ -117,6 +119,7 @@ def detect_car(image):
 
 def classify(box):
     box = cv2.cvtColor(box, cv2.COLOR_BGR2GRAY)
+
 
     with session.as_default():
         with session.graph.as_default():
@@ -163,7 +166,7 @@ def predict(img):
 
 
 def callback(ros_data):
-    global ready_turn, turn, turns, counts, s, a, image_count, tracker, is_car
+    global ready_turn, turn, turns, counts, s, a, image_count, tracker, is_car, startX, startY, endX, endY, end_track
 
     image_count += 1
 
@@ -174,14 +177,14 @@ def callback(ros_data):
 
         if len(turns) > 2:
             if (l > r):
-                ready_turn = 30
+                ready_turn = 21
                 turn = 'left'
             elif (r > l):
-                ready_turn = 30
+                ready_turn = 21
                 turn = 'right'
             else:
                 turn = 'none'
-        print(turn)
+        # print(turn)
         turns = []
     x = 0
     y = 0
@@ -195,51 +198,61 @@ def callback(ros_data):
         x, y, w, h = rect
         y = y - 2
         x = x - 2
-        roi = image_np[y:y + h + 5, x:x + w + 5]
+        roi = image_np[y:y + h + 7, x:x + w + 7]
 
         turn_pred = classify(roi)
-        print(turn_pred)
+        # print(turn_pred)
 
         if (turn_pred == 'left') or (turn_pred == 'right'):
             turns.append(turn_pred)
             cv2.rectangle(image_np, (x, y), (x + w, y + h), [0, 255, 0], 1)
             cv2.putText(image_np, turn_pred, (x, y + h + 8), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255))
 
+
+
     with session.as_default():
         with session.graph.as_default():
+            start = timeit.default_timer()
             y_pred = np.squeeze(lane.predict(image_np.reshape(1, 240, 320, 3).astype('float32')))
+            stop = timeit.default_timer()
+            print('Time: ', stop - start)
 
-    if 0 < ready_turn < 25:
+    if 0 < ready_turn < 19:
         if turn == 'left':
-            print("turn left")
+            # print("turn left")
             s = 0
             a = -60
         elif turn == 'right':
-            print('turn right')
+            # print('turn right')
             s = 0
             a = 60
 
     else:
         # Set frequent detect car
-        if image_count % 10 == 0:
-            box = detect_car(image_np)
-            if box != [0, 0, 0, 0]:
+        if image_count % 3 == 0:
+            startX1, startY1, endX1, endY1 = detect_car(image_np)
+
+            if [startX1, startY1, endX1, endY1] != [0, 0, 0, 0]:
+                startX, startY, endX, endY = [startX1, startY1, endX1, endY1]
                 # if detected box is car
                 is_car = True
                 # Convert car box to dlib type
-                rect_car = dlib.rectangle(box[0], box[1], box[2], box[3])
+                rect_car = dlib.rectangle(startX, startY, endX, endY)
                 # Start track by this box for 10 next frames
                 tracker.start_track(image_np, rect_car)
-                # Set detected region not lane
-                y_pred[box[1]:box[3], box[0]:box[2]] = 0
-                # Draw bounding box
-                image_np = cv2.rectangle(image_np, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
+
+                startX -= 10
+                startY = 0
+                endX += 10
+                endY += 20
+
         else:
             # Update tracking
             if is_car == True:
                 # Set last frame to original
-                if image_count % 10 == 9:
+                if image_count % 3 == 2:
                     is_car = False
+                    end_track = image_count
 
                 # Update tracking image
                 tracker.update(image_np)
@@ -248,21 +261,48 @@ def callback(ros_data):
                 pos = tracker.get_position()
 
                 # Get coordinate
-                startX = int(pos.left())
-                startY = int(pos.top())
-                endX = int(pos.right())
-                endY = int(pos.bottom() + 15)
+                startX = int(pos.left() - 10)
+                startY = 0
+                # startY = int(pos.top() - 10)
+                endX = int(pos.right() + 10)
+                endY = int(pos.bottom() + 20)
 
-                # Set detected region not lane
-                y_pred[startY:endY, startX:endX] = 0
-                # print(image_count)
-                # Draw
-                image_np = cv2.rectangle(image_np, (startX, startY), (endX, endY), (0, 255, 0), 2)
+                # if endY > 240:
+                #     endY = 240
+                #
+                # # Set detected region not lane
+                # y_pred[startY:endY, startX:endX] = 0
+                # # print(image_count)
+                # # Draw
+                # image_np = cv2.rectangle(image_np, (startX, startY), (endX, endY), (0, 255, 0), 2)
+
+        if not is_car and (image_count - end_track == 7) and endY != 0:
+            # image_count = 0
+            # print("pass")
+            startX, startY, endX, endY = [0, 0, 0, 0]
+        if endY > 240:
+            # print(startX, endX)
+            startY = 0
+            endY = 240
+        if startX < 0:
+            startX = 0
+            # print(startX, endX)
+        if endX > 320:
+            endX = 320
+            # print(startX, endX)
+
+        # print(endY)
+        # print(image_count)
+        # Draw
+        image_np = cv2.rectangle(image_np, (startX, startY), (endX, endY), (0, 255, 0), 2)
+        # Set detected region not lane
+        # print(image_count)
+        y_pred[startY:endY, startX:endX] = 0
 
         # Control car
 
         if (y_pred[140].sum() > 280):
-            print("______________________________________________________________________________")
+            # print("______________________________________________________________________________")
             x, y = (120, 160)
         else:
             temp = np.where(y_pred == 1)
@@ -270,39 +310,41 @@ def callback(ros_data):
             # x = temp[0].mean()
             # y = temp[1].mean()
 
-            # x, y = get_center_lane_point(y_pred, 155)
-            x1, y1 = get_center_lane_point(y_pred, 132)
-            x2, y2 = get_center_lane_point(y_pred, 190)
-
+            # x, y = get_center_lane_point(y_pred, 152)
+            x1, y1 = get_center_lane_point(y_pred, 120)
+            x2, y2 = get_center_lane_point(y_pred, 150)
+            #
             x = np.mean([x1, x2])
             y = np.mean([y1, y2])
             # print(x, y)
             # image_np = cv2.rectangle(image_np, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
 
         cv2.line(image_np, (160, 240), (int(y), int(x)), [0, 255, 0], 2)
-        print("straight")
+        # print("straight")
         if (159 < y < 161):
-            s = 50
-        elif (y < 130 or y > 210):
+            s = 120
+        elif (y < 140 or y > 180):
             s = 10
         else:
-            s = 50
-
+            s = 60
         # print(y_pred[0])
+        if len(turns) > 0 and turns[-1] != 'none':
+            print("slow")
+            s = 0
         a = getAngle(x, y)
 
         cv2.putText(image_np, str(s) + " km/h", (170, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255))
 
-    # cv2.namedWindow('origin', cv2.WINDOW_NORMAL)
-    # # cv2.namedWindow('box', cv2.WINDOW_NORMAL)
-    # # cv2.namedWindow('segmented', cv2.WINDOW_NORMAL)
-    # cv2.resizeWindow('origin', 640, 480)
-    # # cv2.resizeWindow('box', 640, 480)
-    # # cv2.resizeWindow('segmented', 640, 480)
-    # cv2.imshow('origin', image_np)
-    # # cv2.imshow('box', box_img)
-    # # cv2.imshow('segmented', y_pred)
-    # cv2.waitKey(1)
+    cv2.namedWindow('origin', cv2.WINDOW_NORMAL)
+    # cv2.namedWindow('box', cv2.WINDOW_NORMAL)
+    # cv2.namedWindow('segmented', cv2.WINDOW_NORMAL)
+    cv2.resizeWindow('origin', 640, 480)
+    # cv2.resizeWindow('box', 640, 480)
+    # cv2.resizeWindow('segmented', 640, 480)
+    cv2.imshow('origin', image_np)
+    # cv2.imshow('box', box_img)
+    # cv2.imshow('segmented', y_pred)
+    cv2.waitKey(1)
 
     speed.publish(s)
     angle.publish(round(a))

@@ -1,28 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="f2bf7ccb-9596-473e-8ca2-450a140ee577" name="Default Changelist" comment="" />
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <list default="true" id="67949d98-3c0c-49ba-b353-d47260ba775f" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ProjectId" id="1U8V4TzkGbzwV8QIPjq6g7HEGcj" />
+  <component name="JupyterTrust" id="01f8a1de-a436-4a99-bd4d-62e79c789025" />
+  <component name="ProjectId" id="1Vsb3KO3p5Hqfnff9iYF7nynf9S" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
   </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/banana/models" />
+      <recent name="$PROJECT_DIR$/src/banana/bin" />
+    </key>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
       <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
       </list>
     </option>
   </component>
@@ -31,19 +49,46 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="f2bf7ccb-9596-473e-8ca2-450a140ee577" name="Default Changelist" comment="" />
-      <created>1574738017350</created>
+      <changelist id="67949d98-3c0c-49ba-b353-d47260ba775f" name="Default Changelist" comment="" />
+      <created>1578044548874</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1574738017350</updated>
-      <workItem from="1574738021140" duration="12028000" />
-      <workItem from="1574760208844" duration="630000" />
-      <workItem from="1574763966830" duration="4213000" />
-      <workItem from="1574780897361" duration="646000" />
+      <updated>1578044548874</updated>
+      <workItem from="1578044551791" duration="1015000" />
+      <workItem from="1578045783095" duration="3006000" />
+      <workItem from="1578068947127" duration="4300000" />
+      <workItem from="1578126307248" duration="77000" />
+      <workItem from="1578132737754" duration="2282000" />
+      <workItem from="1578148887849" duration="13323000" />
+      <workItem from="1578204575440" duration="4846000" />
+      <workItem from="1578221660026" duration="11626000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="2663" y="274" width="424" height="484" key="FileChooserDialogImpl" timestamp="1578126382733">
+      <screen x="1920" y="0" width="1920" height="1080" />
+    </state>
+    <state x="743" y="278" width="424" height="484" key="FileChooserDialogImpl/0.27.1920.988/1920.0.1920.1080@0.27.1920.988" timestamp="1578053051999" />
+    <state x="2663" y="274" key="FileChooserDialogImpl/0.27.1920.988/1920.0.1920.1080@1920.0.1920.1080" timestamp="1578126382733" />
+    <state x="449" y="155" key="SettingsEditor" timestamp="1578045956503">
+      <screen x="0" y="27" width="1920" height="988" />
+    </state>
+    <state x="449" y="155" key="SettingsEditor/0.27.1920.988/1920.0.1920.1080@0.27.1920.988" timestamp="1578045956503" />
+    <state x="616" y="348" key="com.intellij.ide.util.TipDialog" timestamp="1578044555262">
+      <screen x="0" y="27" width="1920" height="988" />
+    </state>
+    <state x="616" y="348" key="com.intellij.ide.util.TipDialog/0.27.1920.988/1920.0.1920.1080@0.27.1920.988" timestamp="1578044555262" />
+    <state x="609" y="239" width="700" height="530" key="recent.locations.popup" timestamp="1578240250515">
+      <screen x="0" y="27" width="1920" height="988" />
+    </state>
+    <state x="609" y="239" width="700" height="530" key="recent.locations.popup/0.27.1920.988/1920.0.1920.1080@0.27.1920.988" timestamp="1578240250515" />
+    <state x="2543" y="237" width="672" height="678" key="search.everywhere.popup" timestamp="1578232799302">
+      <screen x="1920" y="0" width="1920" height="1080" />
+    </state>
+    <state x="2543" y="237" width="672" height="678" key="search.everywhere.popup/0.27.1920.988/1920.0.1920.1080@1920.0.1920.1080" timestamp="1578232799302" />
   </component>
 </project>

@@ -7,5 +7,7 @@
 # new environment variables
 
 # modified environment variables
-export PATH="/opt/ros/melodic/bin:/home/ligirk/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
-export PWD="/home/ligirk/catkin_ws/build"
+export CMAKE_PREFIX_PATH="/home/long/catkin_ws/devel:$CMAKE_PREFIX_PATH"
+export PWD="/home/long/catkin_ws/build"
+export ROSLISP_PACKAGE_DIRECTORIES="/home/long/catkin_ws/devel/share/common-lisp"
+export ROS_PACKAGE_PATH="/home/long/catkin_ws/src:$ROS_PACKAGE_PATH"
